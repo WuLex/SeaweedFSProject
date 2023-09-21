@@ -1,0 +1,122 @@
+﻿@model List<FileItem>
+
+@{
+    ViewData["Title"] = "文件列表";
+}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/layui/2.8.17/css/layui.css" rel="stylesheet" />
+<div class="layui-container">
+    <h2 class="layui-elip">@ViewData["Title"]</h2>
+    <div class="layui-upload">
+        <button type="button" class="layui-btn layui-btn-normal" id="uploadButton">上传文件</button>
+        <div class="layui-upload-list">
+            <table class="layui-table">
+                <thead>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Seaweedfs Id</th>
+                        <th>图片展示</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var file in Model)
+                    {
+                        <tr>
+                            <td>
+                                 <div class="layui-table-cell" style="width: 200px;"
+                                 lay-event="fileTip" lay-tips="@file.FileName">
+                                 @file.FileName
+                                 </div>
+                            </td>
+                            <td class="layui-table-cell">@file.FileId</td>
+                            <td class="layui-table-cell">
+                                <img src="http://localhost:9333/@(file.FileId).jpg?height=200&width=200&mode=fit" style="max-height: 100px;" /></td>
+                            <td class="layui-table-cell">
+                                <a href="@Url.Action("Download", new { id = file.Id })" class="layui-btn layui-btn-normal">下载</a>
+                                <button class="layui-btn  layui-btn-danger" onclick="deleteFile(@file.Id)">删除</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/layui/2.8.17/layui.js"></script>
+    <script>
+        layui.use(['upload', 'layer', 'form', 'element'], function () {
+            var upload = layui.upload;
+            var layer = layui.layer;
+            var $ = layui.jquery
+            var form = layui.form;
+            var element = layui.element;
+
+            // 文件上传配置
+            upload.render({
+                elem: '#uploadButton',
+                url: '@Url.Action("Upload")',
+                accept: 'file',
+                done: function (res) {
+                    if (res.success) {
+                        layer.msg('文件上传成功');
+                        location.reload();
+                    } else {
+                        layer.msg('文件上传失败');
+                    }
+                },
+                error: function () {
+                    layer.msg('文件上传失败');
+                }
+            });
+        
+
+             // 悬停时显示tooltip
+            $('[lay-event="fileTip"]').on('mouseenter', function () {
+                var tips = $(this).attr('lay-tips');
+                //var position = {
+                //    top: $(this).offset().top + $(this).outerHeight() + 5, // 将tooltip放在下方
+                //    left: $(this).offset().left,
+                //};
+                layer.tips(tips, this, {
+                    tips: [3, '#000'],
+                    time: 0, // 悬停时间无限长
+                    area: ['auto', 'auto']
+                    //area: [position.left + 'px', 'auto'], // 设置宽度自适应
+                    //offset: [position.top + 'px', ''], // 设置offset，使tooltip在下方
+                });
+            });
+
+            // 移开时关闭tooltip
+            $('[lay-event="fileTip"]').on('mouseleave', function () {
+                layer.closeAll('tips'); // 鼠标离开时关闭提示
+            });
+        });
+
+        // 文件删除函数
+        function deleteFile(id) {
+            layui.layer.confirm('您确定要删除这个文件吗？', {
+                btn: ['确定', '取消'],
+                title: '删除确认'
+            }, function () {
+                $.ajax({
+                    type: 'POST',
+                    url: '@Url.Action("Delete")',
+                    data: { id: id },
+                    success: function (result) {
+                        if (result.success) {
+                            layer.msg('文件删除成功');
+                            location.reload();
+                        } else {
+                            layer.msg('文件删除失败');
+                        }
+                    },
+                    error: function () {
+                        layer.msg('文件删除失败');
+                    }
+                });
+            });
+        }
+    </script>
+}
